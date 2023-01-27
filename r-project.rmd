@@ -1,0 +1,393 @@
+---
+title: "R Project"
+author: "Mikołaj Pajor, Kacper Ćwiertnia"
+output: 
+  pdf_document: default
+    
+---
+
+\pagebreak
+
+Poniższy projekt przedstawia analizę statystyczną porównania algorytmów minimalizacji stochastycznej. Porównywane przez nas algorytmy to algorytm Poszukiwania przypadkowego (PRS) oraz algorytm wielokrotnego startu (MS), natomiast wybrane funkcje to funkcja Alpine01 oraz funkcja Ackleya
+\
+\
+
+# Funkcja Ackleya
+\
+\
+
+## Funkcja Ackleya to niewypukła funkcja służąca do testowania wydajności algorytmów optymalizacji, której minimum znajduje się na środku dziedziny. Jest częścią pakietu smooof środowiska R i wyrażona jest poniższym wzorem.
+ $$
+ f(x)=-20e^{-0.2 \sqrt{\frac{1}{n}\sum_{i=1}^{n}x_i})}-e^{\frac{1}{n}\sum_{i=1}^{n}\cos{(2\pi x_i)}} 
+ $$
+\
+\
+![Funkcja Ackleya](./ackley.png){width=400px, height=300px;}
+\
+\
+
+# Funkcja Alpine01
+\
+\
+
+## Alpine01 to inny przykład funkcji z pakietu smoof, której również użyjemy do testowania naszych algorytmów. Od funkcji Ackleya odróżnia ją to, że ma znacząco więcej ekstremów (zarówno minimów jak i maksimów), co możemy zobaczyć na wykresie funkcji Alpine 2D poniżej.
+
+ $$
+ f(x)=\sum_{i=1}^{n}{|x_i \sin{(x_i)}+0.1x_i|}
+ $$
+\
+\
+
+![Funkcja Alpine01](Alpine01.png){height=300;width=400}
+\pagebreak
+```{r include=FALSE}
+  library(smoof)
+```
+
+# Algorytm Poszukiwania Przypadkowego (Pure Random Search)
+
+Poniższy kod przedstawia implementacje algorytmu PRS w języku R polegającego na losowaniu zadanej ilości punktów wylosowanych z rozkładu jednostajnego. Dla każdego z nich oblicza wartość funkcji, za każdym razem porównując z najmniejszą do tej pory wyliczoną wartością (zaczynamy z min_val=inf). Po sprawdzeniu wszystkich punktów algorytm zwraca najmniejszą napotkaną wartość.\
+\
+
+```{r message=FALSE}
+prs_algorithm <- function(fun, dim, num_of_points){
+  f <- fun(dim);
+  min_value <- Inf
+  
+  for(x in 1:num_of_points){
+    point <- runif(dim, getLowerBoxConstraints(f), getUpperBoxConstraints(f))
+    value <- f(point)
+    
+    if(value < min_value){
+      min_value <- value
+    }
+  }
+  
+  return(min_value)
+}
+```
+
+\pagebreak
+
+# Metoda wielokrotnego startu (Multi-Start,ms)
+
+Poniższy kod przedstawia implementacje w języku R algorytmu wielokrotnego startu, który podobnie jak algorytm PRS losuje zadaną ilość punktów z rozkładu jednostajnego dla których znajduje minimum. Znajdowanie minimum odbywa się przy wykorzystaniu funkcji optim() z metodą "**L-BFGS-B**". Dodatkowo przy wykorzystanie funkcji optim, określamy budżet wywołań algorytmu PRS.\
+\
+
+```{r}
+ms_algorithm <- function(fun, dim, num_of_points){
+  f <- fun(dim);
+  min_value <- Inf
+  counter <- 0
+  for(x in 1:num_of_points){
+    point <- runif(dim, getLowerBoxConstraints(f), getUpperBoxConstraints(f))
+    
+    result <- optim(point, f, method = "L-BFGS-B", 
+                    lower = getLowerBoxConstraints(f), upper = getUpperBoxConstraints(f))
+    value <- as.numeric(result$value)
+    counter <- counter + as.numeric(result$counts[1])
+    
+    if(value < min_value){
+      min_value <- value
+    }
+  }
+  return(list(min_value, counter))
+}
+```
+
+\pagebreak
+
+# Algorytm porównujący wyniki algorytmów PRS i MS dla zadanej funkcji i wymiaru
+
+Poniższy kod w pierwszej kolejności wywołuje algorytm MS 50 razy dla 100 punktów, a następnie oblicza średnią wywołań, która jednocześnie jest budżetem algorytmu PRS. W kolejnym kroku wywoływany jest algorytm PRS, również 50 razy dla określonego budżetu. Funkcja porównująca zapisuje wyniki obliczeń algorytmów przeszukujących i zwraca je w celu opracowania danych.\
+\
+
+```{r}
+compare_algorithms <- function(alg1, alg2, func, dim){
+  res_alg1 <- replicate(50, alg1(func, dim, 100))
+  alg1_counters <- as.numeric(res_alg1[2,])
+  alg1_points <- as.numeric(res_alg1[1,])
+  counter <- mean(alg1_counters)
+  res_alg2 <- replicate(50, alg2(func, dim, counter))
+  return(list(alg1_points,res_alg2))
+}
+```
+
+\pagebreak
+
+# Opracowanie wyników
+
+## Porównanie algorytmów dla funkcji Alpine01 i 2 wymiarów
+
+```{r echo=FALSE}
+result<-compare_algorithms(ms_algorithm, prs_algorithm, makeAlpine01Function, 2)
+hist(result[[1]], main = "Histogram algorytmu MS", xlab = "Zakresy minimów", ylab = "Ilosc minimów")
+```
+\
+\
+```{r echo=FALSE}
+boxplot(result[[1]], main = "Wykres pudelkowy algorytmu MS", ylab = "Zakres minimów")
+```
+\
+\
+```{r echo=FALSE}
+hist(result[[2]], main = "Histogram algorytmu PRS", xlab = "Zakresy minimów", ylab = "Ilosc minimów")
+```
+\
+\
+```{r echo=FALSE}
+boxplot(result[[2]], main = "Wykres pudelkowy algorytmu PRS", ylab = "Zakres minimów")
+```
+\
+Z wykresów wyników pracy obu algorytmów widać wyraźną przewagą algorytmu MS, którego wyniki były rzędu 10^-4 niższe algorytmu PRS. Dodatkowo MS znajduje minima w znacznie węższym obszarze niż jego konkurent.
+\pagebreak
+
+## Przedział ufności i hipoteza zerowa funkcji Alpine01 2 wymiarów dla algorytmu MS
+```{r echo=FALSE}
+t.test(x=result[[1]],conf.level = 0.95)
+```
+
+## Przedział ufności i hipoteza zerowa funkcji Alpine01 2 wymiarów dla algorytmu PRS
+
+```{r echo=FALSE}
+t.test(x=result[[2]],conf.level = 0.95)
+```
+
+## Przedział ufności i hipoteza zerowa funkcji Alpine01 2 wymiarów dla porównania algorytmów MS i PRS
+
+```{r echo=FALSE}
+t.test(x=result[[1]],y=result[[2]],conf.level = 0.95)
+```
+
+\pagebreak
+
+## Porównanie wyników algorytmów dla funckji Ackleya i 2 wymiarów
+
+
+```{r echo=FALSE}
+result2<-compare_algorithms(ms_algorithm, prs_algorithm, makeAckleyFunction, 2)
+hist(result2[[1]], main = "Histogram algorytmu MS", xlab = "Zakresy minimów", ylab = "Ilosc minimów")
+```
+\
+\
+```{r echo=FALSE}
+boxplot(result2[[1]], main = "Wykres pudelkowy algorytmu MS", ylab = "Zakres minimów")
+```
+\
+\
+```{r echo=FALSE}
+hist(result2[[2]], main = "Histogram algorytmu PRS", xlab = "Zakresy minimów", ylab = "Ilosc minimów")
+```
+\
+\
+```{r echo=FALSE}
+boxplot(result2[[2]], main = "Wykres pudelkowy algorytmu PRS", ylab = "Zakres minimów")
+```
+\
+Algorytm MS znalazł mnóstwo minimów w okolicach 0, co zgadza się z wykresem tej funkcji, natomiast, znalazł również dużo punktów odbiegających od 0, spowodowane większą ilością minimów lokalnych utrudniających znalezienie minima globalnego. PRS jednak wypadł dużo gorzej, nie będąc nawet bliskim znalezienia minimów w zerze.
+\pagebreak
+
+## Przedział ufności i hipoteza zerowa funkcji Ackleya 2 wymiarów dla algorytmu MS
+```{r echo=FALSE}
+t.test(x=result[[1]],conf.level = 0.95)
+```
+
+## Przedział ufności i hipoteza zerowa funkcji Ackleya 2 wymiarów dla algorytmu PRS
+
+```{r echo=FALSE}
+t.test(x=result[[2]],conf.level = 0.95)
+```
+
+## Przedział ufności i hipoteza zerowa funkcji Ackleya 2 wymiarów dla porównania algorytmów MS i PRS
+
+```{r echo=FALSE}
+t.test(x=result[[1]],y=result[[2]],conf.level = 0.95)
+```
+\pagebreak
+
+
+## Porównanie algorytmów dla funkcji Alpine01 i 10 wymiarów
+\
+\
+
+```{r echo=FALSE}
+result3<-compare_algorithms(ms_algorithm, prs_algorithm, makeAlpine01Function, 10)
+hist(result3[[1]], main = "Histogram algorytmu MS", xlab = "Zakresy minimów", ylab = "Ilosc minimów")
+```
+\
+\
+```{r echo=FALSE}
+boxplot(result3[[1]], main = "Wykres pudelkowy algorytmu MS", ylab = "Zakres minimów")
+```
+\
+\
+```{r echo=FALSE}
+hist(result3[[2]], main = "Histogram algorytmu PRS", xlab = "Zakresy minimów", ylab = "Ilosc minimów")
+```
+\
+\
+```{r echo=FALSE}
+boxplot(result3[[2]], main = "Wykres pudelkowy algorytmu PRS", ylab = "Zakres minimów")
+```
+\
+Algorytm MS standardowo pokazuje swoją przewagę znajdując znaczącą większość minimów blisko zera, spontanicznie wpadając w minima lokalne oddalone od tego punktu. PRS wciąż wyznacza minima w sporej odległości od tych znalezionych przez MS.
+\pagebreak
+
+## Przedział ufności i hipoteza zerowa funkcji Alpine01 10 wymiarów dla algorytmu MS
+```{r echo=FALSE}
+t.test(x=result[[1]],conf.level = 0.95)
+```
+
+## Przedział ufności i hipoteza zerowa funkcji Alpine01 10 wymiarów dla algorytmu PRS
+
+```{r echo=FALSE}
+t.test(x=result[[2]],conf.level = 0.95)
+```
+
+## Przedział ufności i hipoteza zerowa funkcji Alpine01 10 wymiarów dla porównania algorytmów MS i PRS
+
+```{r echo=FALSE}
+t.test(x=result[[1]],y=result[[2]],conf.level = 0.95)
+```
+
+\pagebreak
+
+## Porównanie wyników algorytmów dla funckji Ackleya i 10 wymiarów
+
+```{r echo=FALSE}
+result4<-compare_algorithms(ms_algorithm, prs_algorithm, makeAckleyFunction, 10)
+hist(result4[[1]], main = "Histogram algorytmu MS", xlab = "Zakresy minimów", ylab = "Ilosc minimów")
+```
+\
+\
+```{r echo=FALSE}
+boxplot(result4[[1]], main = "Wykres pudelkowy algorytmu MS", ylab = "Zakres minimów")
+```
+\
+\
+```{r echo=FALSE}
+hist(result4[[2]], main = "Histogram algorytmu PRS", xlab = "Zakresy minimów", ylab = "Ilosc minimów")
+```
+\
+\
+```{r echo=FALSE}
+boxplot(result4[[2]], main = "Wykres pudelkowy algorytmu PRS", ylab = "Zakres minimów")
+```
+\
+Dla funkcji Ackleya w 10 wymiarach napotykamy zaskającą sytuację - oba algorytmy dały bardzo zbliżone wyniki. Rozbieżność między wyznaczonymi przez nie średnimi była mniejsza niż 0.1.
+\pagebreak
+
+## Przedział ufności i hipoteza zerowa funkcji Ackleya 10 wymiarów dla algorytmu MS
+```{r echo=FALSE}
+t.test(x=result[[1]],conf.level = 0.95)
+```
+
+## Przedział ufności i hipoteza zerowa funkcji Ackleya 10 wymiarów dla algorytmu PRS
+
+```{r echo=FALSE}
+t.test(x=result[[2]],conf.level = 0.95)
+```
+
+## Przedział ufności i hipoteza zerowa funkcji Ackleya 10 wymiarów dla porównania algorytmów MS i PRS
+
+```{r echo=FALSE}
+t.test(x=result[[1]],y=result[[2]],conf.level = 0.95)
+```
+
+\pagebreak
+
+## Porównanie algorytmów dla funkcji Alpine01 i 20 wymiarów
+
+\
+\
+```{r echo=FALSE}
+result5<-compare_algorithms(ms_algorithm, prs_algorithm, makeAlpine01Function, 20)
+hist(result5[[1]], main = "Histogram algorytmu MS", xlab = "Zakresy minimów", ylab = "Ilosc minimów")
+```
+\
+\
+```{r echo=FALSE}
+boxplot(result5[[1]], main = "Wykres pudelkowy algorytmu MS", ylab = "Zakres minimów")
+```
+\
+\
+```{r echo=FALSE}
+hist(result5[[2]], main = "Histogram algorytmu PRS", xlab = "Zakresy minimów", ylab = "Ilosc minimów")
+```
+\
+\
+```{r echo=FALSE}
+boxplot(result5[[2]], main = "Wykres pudelkowy algorytmu PRS", ylab = "Zakres minimów")
+```
+\
+Dla funkcji Alpine01 w 20 wymiarach, funkcja MS znajduje minima blisko 0. PRS ucieka do wartości blisko 25, które co więcej rozłożone są na znacznie większym obszarze.
+\pagebreak
+
+## Przedział ufności i hipoteza zerowa funkcji Alpine01 20 wymiarów dla algorytmu MS
+```{r echo=FALSE}
+t.test(x=result[[1]],conf.level = 0.95)
+```
+
+## Przedział ufności i hipoteza zerowa funkcji Alpine01 20 wymiarów dla algorytmu PRS
+
+```{r echo=FALSE}
+t.test(x=result[[2]],conf.level = 0.95)
+```
+
+## Przedział ufności i hipoteza zerowa funkcji Alpine01 20 wymiarów dla porównania algorytmów MS i PRS
+
+```{r echo=FALSE}
+t.test(x=result[[1]],y=result[[2]],conf.level = 0.95)
+```
+
+\pagebreak
+
+## Porównanie wyników algorytmów dla funckji Ackleya i 20 wymiarów
+
+```{r echo=FALSE}
+result6<-compare_algorithms(ms_algorithm, prs_algorithm, makeAckleyFunction, 20)
+hist(result6[[1]], main = "Histogram algorytmu MS", xlab = "Zakresy minimów", ylab = "Ilosc minimów")
+```
+\
+\
+```{r echo=FALSE}
+boxplot(result6[[1]], main = "Wykres pudelkowy algorytmu MS", ylab = "Zakres minimów")
+```
+\
+\
+```{r echo=FALSE}
+hist(result6[[2]], main = "Histogram algorytmu PRS", xlab = "Zakresy minimów", ylab = "Ilosc minimów")
+```
+\
+\
+```{r echo=FALSE}
+boxplot(result6[[2]], main = "Wykres pudelkowy algorytmu PRS", ylab = "Zakres minimów")
+```
+\
+Dla funkcji Ackleya 20 wymiarów ponownie obserwujemy zbliżanie się wyników obu algorytmów. Mimo to, MS wypada lepiej, wyznaczając minima na węższym obszarze niż algorytm PRS.
+\pagebreak
+
+## Przedział ufności i hipoteza zerowa funkcji Ackleya 20 wymiarów dla algorytmu MS
+
+```{r echo=FALSE}
+t.test(x=result[[1]],conf.level = 0.95)
+```
+
+## Przedział ufności i hipoteza zerowa funkcji Ackleya 20 wymiarów dla algorytmu PRS
+
+```{r echo=FALSE}
+t.test(x=result[[2]],conf.level = 0.95)
+```
+
+## Przedział ufności i hipoteza zerowa funkcji Ackleya 20 wymiarów dla porównania algorytmów MS i PRS
+
+```{r echo=FALSE}
+t.test(x=result[[1]],y=result[[2]],conf.level = 0.95)
+```
+\pagebreak
+
+# Podsumowanie
+\
+\
+
+## Z wyników obliczeń wyraźnie widać przewagę algorytmu MS, który dzięki wykorzystaniu funkcji optim z metodą L-BFGS-B, znajduje minima znacznie skuteczniej, ponieważ nie losuje za każdym razem punktu do sprawdzenia, ale posługuje się gradientem funkcji, dzięki czemu lepiej przewiduje, w którą stronę powinien się kierować. 
