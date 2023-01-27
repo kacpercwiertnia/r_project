@@ -189,19 +189,19 @@ Algorytm MS znalazł mnóstwo minimów w okolicach 0, co zgadza się z wykresem 
 
 ## Przedział ufności i hipoteza zerowa funkcji Ackleya 2 wymiarów dla algorytmu MS
 ```{r echo=FALSE}
-t.test(x=result[[1]],conf.level = 0.95)
+t.test(x=result2[[1]],conf.level = 0.95)
 ```
 
 ## Przedział ufności i hipoteza zerowa funkcji Ackleya 2 wymiarów dla algorytmu PRS
 
 ```{r echo=FALSE}
-t.test(x=result[[2]],conf.level = 0.95)
+t.test(x=result2[[2]],conf.level = 0.95)
 ```
 
 ## Przedział ufności i hipoteza zerowa funkcji Ackleya 2 wymiarów dla porównania algorytmów MS i PRS
 
 ```{r echo=FALSE}
-t.test(x=result[[1]],y=result[[2]],conf.level = 0.95)
+t.test(x=result2[[1]],y=result2[[2]],conf.level = 0.95)
 ```
 \pagebreak
 
@@ -235,19 +235,19 @@ Algorytm MS standardowo pokazuje swoją przewagę znajdując znaczącą większo
 
 ## Przedział ufności i hipoteza zerowa funkcji Alpine01 10 wymiarów dla algorytmu MS
 ```{r echo=FALSE}
-t.test(x=result[[1]],conf.level = 0.95)
+t.test(x=result3[[1]],conf.level = 0.95)
 ```
 
 ## Przedział ufności i hipoteza zerowa funkcji Alpine01 10 wymiarów dla algorytmu PRS
 
 ```{r echo=FALSE}
-t.test(x=result[[2]],conf.level = 0.95)
+t.test(x=result3[[2]],conf.level = 0.95)
 ```
 
 ## Przedział ufności i hipoteza zerowa funkcji Alpine01 10 wymiarów dla porównania algorytmów MS i PRS
 
 ```{r echo=FALSE}
-t.test(x=result[[1]],y=result[[2]],conf.level = 0.95)
+t.test(x=result3[[1]],y=result3[[2]],conf.level = 0.95)
 ```
 
 \pagebreak
@@ -279,19 +279,19 @@ Dla funkcji Ackleya w 10 wymiarach napotykamy zaskającą sytuację - oba algory
 
 ## Przedział ufności i hipoteza zerowa funkcji Ackleya 10 wymiarów dla algorytmu MS
 ```{r echo=FALSE}
-t.test(x=result[[1]],conf.level = 0.95)
+t.test(x=result4[[1]],conf.level = 0.95)
 ```
 
 ## Przedział ufności i hipoteza zerowa funkcji Ackleya 10 wymiarów dla algorytmu PRS
 
 ```{r echo=FALSE}
-t.test(x=result[[2]],conf.level = 0.95)
+t.test(x=result4[[2]],conf.level = 0.95)
 ```
 
 ## Przedział ufności i hipoteza zerowa funkcji Ackleya 10 wymiarów dla porównania algorytmów MS i PRS
 
 ```{r echo=FALSE}
-t.test(x=result[[1]],y=result[[2]],conf.level = 0.95)
+t.test(x=result4[[1]],y=result4[[2]],conf.level = 0.95)
 ```
 
 \pagebreak
@@ -325,19 +325,19 @@ Dla funkcji Alpine01 w 20 wymiarach, funkcja MS znajduje minima blisko 0. PRS uc
 
 ## Przedział ufności i hipoteza zerowa funkcji Alpine01 20 wymiarów dla algorytmu MS
 ```{r echo=FALSE}
-t.test(x=result[[1]],conf.level = 0.95)
+t.test(x=result5[[1]],conf.level = 0.95)
 ```
 
 ## Przedział ufności i hipoteza zerowa funkcji Alpine01 20 wymiarów dla algorytmu PRS
 
 ```{r echo=FALSE}
-t.test(x=result[[2]],conf.level = 0.95)
+t.test(x=result5[[2]],conf.level = 0.95)
 ```
 
 ## Przedział ufności i hipoteza zerowa funkcji Alpine01 20 wymiarów dla porównania algorytmów MS i PRS
 
 ```{r echo=FALSE}
-t.test(x=result[[1]],y=result[[2]],conf.level = 0.95)
+t.test(x=result5[[1]],y=result5[[2]],conf.level = 0.95)
 ```
 
 \pagebreak
@@ -370,19 +370,19 @@ Dla funkcji Ackleya 20 wymiarów ponownie obserwujemy zbliżanie się wyników o
 ## Przedział ufności i hipoteza zerowa funkcji Ackleya 20 wymiarów dla algorytmu MS
 
 ```{r echo=FALSE}
-t.test(x=result[[1]],conf.level = 0.95)
+t.test(x=result6[[1]],conf.level = 0.95)
 ```
 
 ## Przedział ufności i hipoteza zerowa funkcji Ackleya 20 wymiarów dla algorytmu PRS
 
 ```{r echo=FALSE}
-t.test(x=result[[2]],conf.level = 0.95)
+t.test(x=result6[[2]],conf.level = 0.95)
 ```
 
 ## Przedział ufności i hipoteza zerowa funkcji Ackleya 20 wymiarów dla porównania algorytmów MS i PRS
 
 ```{r echo=FALSE}
-t.test(x=result[[1]],y=result[[2]],conf.level = 0.95)
+t.test(x=result6[[1]],y=result6[[2]],conf.level = 0.95)
 ```
 \pagebreak
 
